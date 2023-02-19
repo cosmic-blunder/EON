@@ -1,0 +1,14 @@
+EON.Core/obj
+EON.Core/bin
+
+EON.Native/obj
+EON.Native/bin
+
+EON.Main/obj
+EON.Main/bin
+
+EON.Test.Native/obj
+EON.Test.Native/bin
+
+EON.Test/obj
+EON.Test/bin
