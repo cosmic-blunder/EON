@@ -88,6 +88,7 @@ public class Native:GameWindow
         string ShaderVert= Path.GetFullPath(@"../shader/shader.vert");
 
         int VertexBufferObject;
+        int ElementBufferObject;
         public Shader? shaderP; 
         public int VertextArrayObject;
         public Native(int width,int height,string title):
@@ -96,10 +97,16 @@ public class Native:GameWindow
       }
 
       public float[ ] vertices = {
-                -0.5f,-0.5f,0.0f,//bottom left vertix
+                0.5f,0.5f,0.0f,//top right
                  0.5f,-0.5f,0.0f, //Bottom  right vertix
-                 0.0f,0.5f,0.0f   //top vertix
+                 -0.5f,-0.5f,0.0f,//bottom left
+                 -0.5f,0.5f,0.0f   //top  left
            };
+
+        uint [] indices =  {
+            0,1,3,
+            1,2,3
+        };
         protected override void OnUpdateFrame(FrameEventArgs args) {
             base.OnUpdateFrame(args);
 
@@ -118,12 +125,18 @@ public class Native:GameWindow
              
             VertexBufferObject = GL.GenBuffer();
             VertextArrayObject = GL.GenVertexArray();
+
+          
             GL.BindVertexArray(VertextArrayObject);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer,VertexBufferObject);
 
             GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
             
+            ElementBufferObject = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer,ElementBufferObject);
+            GL.BufferData(BufferTarget.ElementArrayBuffer,indices.Length*sizeof(uint),indices,BufferUsageHint.StaticDraw);
+
             GL.VertexAttribPointer(0,3,VertexAttribPointerType.Float,false,3*sizeof(float),0);
             GL.EnableVertexAttribArray(0);
 
@@ -139,8 +152,9 @@ public class Native:GameWindow
                 shaderP?.Use();
             }
             
-            GL.BindVertexArray(VertextArrayObject);
-            GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+            //GL.BindVertexArray(VertextArrayObject);
+            //GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+             GL.DrawElements(PrimitiveType.Triangles,indices.Length,DrawElementsType.UnsignedInt,0);
             SwapBuffers();
         }
 
