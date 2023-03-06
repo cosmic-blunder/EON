@@ -6,7 +6,7 @@ namespace EON.Test.Native
 
         public static void Main(String[] args)
         {
-            var game = new EON.Native.Native(600,800,"OpenTk");
+            var game = new EON.Native.Native(1024,800,"OpenTk master builder");
             game.Run();
 
         }
