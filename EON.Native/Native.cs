@@ -4,12 +4,41 @@ using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 
 
-using System.Timers;
+using System;
 
+using StbImageSharp;
 namespace EON.Native
 {
 
+    public class Texture{
 
+
+         int Handle{get;set;}
+         public Texture(string path){
+         Handle  = GL.GenTexture();
+        // GL.ActiveTexture(TextureUnit.Texture0);
+          Use();
+         //loading texture
+          StbImage.stbi_set_flip_vertically_on_load(1);
+
+          ImageResult image  = ImageResult.FromStream(File.OpenRead(path),ColorComponents.RedGreenBlueAlpha);
+
+          GL.TexImage2D(TextureTarget.Texture2D,0,PixelInternalFormat.Rgba,image.Width,image.Height,0,PixelFormat.Rgba,PixelType.UnsignedByte,image.Data);
+
+          GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+ 
+        
+        }
+
+        public void Use(){
+            
+          GL.BindTexture(TextureTarget.Texture2D,Handle);
+
+        }
+
+
+
+    }
     public class Shader
     {
       public  int Handle;
@@ -68,8 +97,10 @@ namespace EON.Native
             GL.DeleteShader(VertexShader);
 
         }
-
-        public void Use()
+       public  int GetAttrib(string name){
+           return GL.GetAttribLocation(this.Handle,name);
+       }
+            public void Use()
         {
             GL.UseProgram(Handle);
         }
@@ -100,8 +131,8 @@ namespace EON.Native
     {
         static System.Timers.Timer _timer = new System.Timers.Timer(1000); //one second
 
-        string ShaderFrg = Path.GetFullPath(@"shader/shader.frag");
-        string ShaderVert = Path.GetFullPath(@"shader/shader.vert");
+        string ShaderFrg = Path.GetFullPath(@"../shader/shader.frag");
+        string ShaderVert = Path.GetFullPath(@"../shader/shader.vert");
 
         double elapsed;
         int VertexBufferObject;
@@ -112,22 +143,22 @@ namespace EON.Native
           base(GameWindowSettings.Default,
                 new NativeWindowSettings() { Size = (width, height), Title = title })
         {
-            _timer.AutoReset = true;
-            _timer.Enabled = true;
-            _timer.Elapsed += OnElapsed;
 
+                texWall=null;
         }
         public float[] vertices = {
-                0.5f,0.5f,0.0f,//top right
-                 0.5f,-0.5f,0.0f, //Bottom  right vertix
-                 -0.5f,-0.5f,0.0f,//bottom left
-                 -0.5f,0.5f,0.0f   //top  left
+                 0.5f,0.5f,0.0f,1.0f,1.0f,//top right
+                 0.5f,-0.5f,0.0f,1.0f,0.0f, //Bottom  right vertix
+                 -0.5f,-0.5f,0.0f,0.0f,0.0f,//bottom left
+                 -0.5f,0.5f,0.0f,0.0f,1.0f  //top  left
            };
 
         uint[] indices =  {
             0,1,3,
-            0,2,3
+            1,2,3
         };
+
+        Texture texWall {get;set;}
         /**
            
             0       3
@@ -153,7 +184,11 @@ namespace EON.Native
         {
 
             base.OnLoad();
+
+       
             shaderP = new Shader(this.ShaderVert, this.ShaderFrg);
+            shaderP.Use();
+            texWall =  new Texture(Path.GetFullPath(@"../Texture/wall.jpg"));
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
             VertexBufferObject = GL.GenBuffer();
@@ -169,42 +204,33 @@ namespace EON.Native
             ElementBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
             GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
-
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+            
+            
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
             GL.EnableVertexAttribArray(0);
+            
+                   texWall.Use();
+            int texCoord = shaderP.GetAttrib("aTexCoord");
+            GL.VertexAttribPointer(texCoord,2,VertexAttribPointerType.Float,false,5*sizeof(float),3*sizeof(float));
+            GL.EnableVertexAttribArray(texCoord);
 
+            
 
         }
 
 
-
-        private  void OnElapsed(object? source,ElapsedEventArgs args){
-
-            this.elapsed +=1;
-
-        } 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
             GL.Clear(ClearBufferMask.ColorBufferBit);
-
+            texWall.Use();
             if (shaderP != null)
             {
 
                 shaderP?.Use();
             
-            //update the  uniform color
-              double timeValue = this.elapsed;
-             
-             float greenValue =   (float) Math.Sin(timeValue)/2.0f+0.5f;
-
-           
-             int vertexColorLocation = GL.GetUniformLocation(shaderP.Handle,"outColor");
-             GL.Uniform4(vertexColorLocation,0.0f,greenValue,0.0f,1.0f);
 
              
-
-
             GL.BindVertexArray(VertextArrayObject);
             //GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
             GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
