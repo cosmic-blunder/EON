@@ -10,35 +10,27 @@ using StbImageSharp;
 namespace EON.Native
 {
 
+    
     public class Texture{
-
-
          int Handle{get;set;}
-         public Texture(string path){
+         public Texture(string path,TextureUnit unit = TextureUnit.Texture0){
          Handle  = GL.GenTexture();
-        // GL.ActiveTexture(TextureUnit.Texture0);
-          Use();
+     
+         Use(unit);
          //loading texture
-          StbImage.stbi_set_flip_vertically_on_load(1);
-
-          ImageResult image  = ImageResult.FromStream(File.OpenRead(path),ColorComponents.RedGreenBlueAlpha);
-
-          GL.TexImage2D(TextureTarget.Texture2D,0,PixelInternalFormat.Rgba,image.Width,image.Height,0,PixelFormat.Rgba,PixelType.UnsignedByte,image.Data);
-
-          GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
- 
+         StbImage.stbi_set_flip_vertically_on_load(1);
+         ImageResult image  = ImageResult.FromStream(File.OpenRead(path),ColorComponents.RedGreenBlueAlpha);
+         GL.TexImage2D(TextureTarget.Texture2D,0,PixelInternalFormat.Rgba,image.Width,image.Height,0,PixelFormat.Rgba,PixelType.UnsignedByte,image.Data);
+         GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
         
         }
+        public void Use(TextureUnit unit = TextureUnit.Texture0){
+          GL.ActiveTexture(unit);
 
-        public void Use(){
-            
           GL.BindTexture(TextureTarget.Texture2D,Handle);
-
+          
         }
-
-
-
-    }
+}
     public class Shader
     {
       public  int Handle;
@@ -46,8 +38,7 @@ namespace EON.Native
         int FragmentShader;
         int shader;
         int status;
-        public Shader(string vertextPath, string fragmentPath)
-        {
+        public Shader(string vertextPath, string fragmentPath) {
             string VertexShaderSource = File.ReadAllText(vertextPath);
             string FragmentShaderSource = File.ReadAllText(fragmentPath);
 
@@ -97,6 +88,13 @@ namespace EON.Native
             GL.DeleteShader(VertexShader);
 
         }
+
+
+        public void SetInt(string name , int val){
+            int location   = GL.GetUniformLocation(Handle,name);
+
+            GL.Uniform1(location,val);
+        }
        public  int GetAttrib(string name){
            return GL.GetAttribLocation(this.Handle,name);
        }
@@ -131,7 +129,7 @@ namespace EON.Native
     {
         static System.Timers.Timer _timer = new System.Timers.Timer(1000); //one second
 
-        string ShaderFrg = Path.GetFullPath(@"../shader/shader.frag");
+        string ShaderFrg  = Path.GetFullPath(@"../shader/shader.frag");
         string ShaderVert = Path.GetFullPath(@"../shader/shader.vert");
 
         double elapsed;
@@ -139,18 +137,18 @@ namespace EON.Native
         int ElementBufferObject;
         public Shader? shaderP;
         public int VertextArrayObject;
+
         public Native(int width, int height, string title) :
           base(GameWindowSettings.Default,
                 new NativeWindowSettings() { Size = (width, height), Title = title })
         {
-
                 texWall=null;
         }
         public float[] vertices = {
-                 0.5f,0.5f,0.0f,1.0f,1.0f,//top right
+                 0.5f, 0.5f,0.0f,1.0f,1.0f,//top right
                  0.5f,-0.5f,0.0f,1.0f,0.0f, //Bottom  right vertix
-                 -0.5f,-0.5f,0.0f,0.0f,0.0f,//bottom left
-                 -0.5f,0.5f,0.0f,0.0f,1.0f  //top  left
+                -0.5f,-0.5f,0.0f,0.0f,0.0f,//bottom left
+                -0.5f, 0.5f,0.0f,0.0f,1.0f  //top  left
            };
 
         uint[] indices =  {
@@ -158,7 +156,10 @@ namespace EON.Native
             1,2,3
         };
 
+        //textures
         Texture texWall {get;set;}
+        Texture texFace{ get;set;}
+
         /**
            
             0       3
@@ -168,6 +169,8 @@ namespace EON.Native
 
         
         */
+
+        
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             base.OnUpdateFrame(args);
@@ -182,59 +185,55 @@ namespace EON.Native
 
         protected override void OnLoad()
         {
-
             base.OnLoad();
 
-       
             shaderP = new Shader(this.ShaderVert, this.ShaderFrg);
+            
             shaderP.Use();
-            texWall =  new Texture(Path.GetFullPath(@"../Texture/wall.jpg"));
-            GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
+            texWall =  new Texture(Path.GetFullPath(@"../Texture/wall.jpg"));
+            texFace =  new Texture(Path.GetFullPath(@"../Texture/awesomeface.png"),TextureUnit.Texture1);
+
+            shaderP.SetInt("texture1", 0);
+            shaderP.SetInt("texture2", 1);
+
+            GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
             VertexBufferObject = GL.GenBuffer();
             VertextArrayObject = GL.GenVertexArray();
-
-
             GL.BindVertexArray(VertextArrayObject);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
-
             GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
 
             ElementBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
             GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
             
-            
             GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
             GL.EnableVertexAttribArray(0);
-            
-                   texWall.Use();
             int texCoord = shaderP.GetAttrib("aTexCoord");
             GL.VertexAttribPointer(texCoord,2,VertexAttribPointerType.Float,false,5*sizeof(float),3*sizeof(float));
             GL.EnableVertexAttribArray(texCoord);
-
-            
-
         }
-
-
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
             GL.Clear(ClearBufferMask.ColorBufferBit);
+           
+            texWall.Use(TextureUnit.Texture0);
+            texFace.Use(TextureUnit.Texture1);
             texWall.Use();
-            if (shaderP != null)
+             if (shaderP != null)
             {
 
-                shaderP?.Use();
-            
-
+             shaderP?.Use();
              
-            GL.BindVertexArray(VertextArrayObject);
-            //GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
-            GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
-            SwapBuffers();
+             GL.BindVertexArray(VertextArrayObject);
+             
+             //GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+
+             GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
+             SwapBuffers();
             }
         }
         protected override void OnResize(ResizeEventArgs e)
