@@ -7,6 +7,8 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using System;
 
 using StbImageSharp;
+using System.IO;
+
 namespace EON.Native
 {
 
@@ -19,9 +21,27 @@ namespace EON.Native
          Use(unit);
          //loading texture
          StbImage.stbi_set_flip_vertically_on_load(1);
-         ImageResult image  = ImageResult.FromStream(File.OpenRead(path),ColorComponents.RedGreenBlueAlpha);
+         using(Stream stream = File.OpenRead(path)){
+
+         ImageResult image  = ImageResult.FromStream(stream,ColorComponents.RedGreenBlueAlpha);
+
+
          GL.TexImage2D(TextureTarget.Texture2D,0,PixelInternalFormat.Rgba,image.Width,image.Height,0,PixelFormat.Rgba,PixelType.UnsignedByte,image.Data);
+        
+                       // First, we set the min and mag filter. These are used for when the texture is scaled down and up, respectively.
+            // Here, we use Linear for both. This means that OpenGL will try to blend pixels, meaning that textures scaled too far will look blurred.
+            // You could also use (amongst other options) Nearest, which just grabs the nearest pixel, which makes the texture look pixelated if scaled too far.
+            // NOTE: The default settings for both of these are LinearMipmap. If you leave these as default but don't generate mipmaps,
+            // your image will fail to render at all (usually resulting in pure black instead).
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+
+            // Now, set the wrapping mode. S is for the X axis, and T is for the Y axis.
+            // We set this to Repeat so that textures will repeat when wrapped. Not demonstrated here since the texture coordinates exactly match
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
          GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+         }
         
         }
         public void Use(TextureUnit unit = TextureUnit.Texture0){
@@ -186,21 +206,14 @@ namespace EON.Native
         protected override void OnLoad()
         {
             base.OnLoad();
-
-            shaderP = new Shader(this.ShaderVert, this.ShaderFrg);
+            VertextArrayObject = GL.GenVertexArray();
+            GL.BindVertexArray(VertextArrayObject);
             
-            shaderP.Use();
-
-            texWall =  new Texture(Path.GetFullPath(@"../Texture/wall.jpg"));
-            texFace =  new Texture(Path.GetFullPath(@"../Texture/awesomeface.png"),TextureUnit.Texture1);
-
-            shaderP.SetInt("texture1", 0);
-            shaderP.SetInt("texture2", 1);
+ 
 
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
             VertexBufferObject = GL.GenBuffer();
-            VertextArrayObject = GL.GenVertexArray();
-            GL.BindVertexArray(VertextArrayObject);
+     
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
             GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
@@ -209,11 +222,26 @@ namespace EON.Native
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
             GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
             
+            shaderP = new Shader(this.ShaderVert, this.ShaderFrg);
+            shaderP.Use();
+            
+            var vertexLocation = shaderP.GetAttrib("aPosition");
+            GL.EnableVertexAttribArray(vertexLocation);
+            
             GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
             GL.EnableVertexAttribArray(0);
+
             int texCoord = shaderP.GetAttrib("aTexCoord");
             GL.VertexAttribPointer(texCoord,2,VertexAttribPointerType.Float,false,5*sizeof(float),3*sizeof(float));
             GL.EnableVertexAttribArray(texCoord);
+
+            
+            texWall =  new Texture(Path.GetFullPath(@"../Texture/wall.jpg"));
+            texFace =  new Texture(Path.GetFullPath(@"../Texture/awesomeface.png"),TextureUnit.Texture1);
+
+            shaderP.SetInt("texture0", 0);
+            shaderP.SetInt("texture1", 1);
+
         }
         protected override void OnRenderFrame(FrameEventArgs e)
         {
@@ -222,7 +250,7 @@ namespace EON.Native
            
             texWall.Use(TextureUnit.Texture0);
             texFace.Use(TextureUnit.Texture1);
-            texWall.Use();
+          
              if (shaderP != null)
             {
 
