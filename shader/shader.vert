@@ -1,15 +1,18 @@
 #version 420 core
-layout (location = 0) in vec3 aPosition;
 
-out vec4 vertexColor; //specify color output
+layout(location = 0) in vec3 aPosition;
+
+layout(location = 1) in vec2 aTexCoord;
+
+out vec2 texCoord;
+
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
 
-
-void main()
+void main(void)
 {
-    gl_Position = vec4(aPosition, 1.0);
-
-    vertexColor = vec4(0.5,0.0,0.0,1.0); //output variable to read-dark color
-
+    gl_Position =  vec4(aPosition,1.0)*model*view*projection;//vec4(aPosition,1.0f)*transform;//vec4(aPosition, 1.0);
+    texCoord = vec2(aTexCoord.x,aTexCoord.y);
 }
-

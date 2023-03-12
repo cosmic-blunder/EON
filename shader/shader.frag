@@ -1,12 +1,13 @@
 #version 420 core
-out vec4 FragColor;
-in vec4 vertexColor;
+out vec4 outputColor;
 
-uniform vec4 outColor; //set this code in openGL code
+in vec2 texCoord;
 
-
+uniform sampler2D texture0;
+uniform sampler2D texture1;
 
 void main()
 {
-      FragColor =   outColor;  // vec4(1.0f, 0.5f, 0.2f, 1.0f);
+    outputColor =  mix(texture(texture0,texCoord),texture(texture1,texCoord),0.2);
+    // texture(texture0, texCoord);
 }
