@@ -13,8 +13,123 @@ using OpenTK.Mathematics;
 namespace EON.Native
 {
 
-    
-    public class Texture{
+   // This is the camera class as it could be set up after the tutorials on the website.
+    // It is important to note there are a few ways you could have set up this camera.
+    // For example, you could have also managed the player input inside the camera class,
+    // and a lot of the properties could have been made into functions.
+
+    // TL;DR: This is just one of many ways in which we could have set up the camera.
+    // Check out the web version if you don't know why we are doing a specific thing or want to know more about the code.
+    public class Camera
+    {
+        // Those vectors are directions pointing outwards from the camera to define how it rotated.
+        private Vector3 _front = -Vector3.UnitZ;
+
+        private Vector3 _up = Vector3.UnitY;
+
+        private Vector3 _right = Vector3.UnitX;
+
+        // Rotation around the X axis (radians)
+        private float _pitch;
+
+        // Rotation around the Y axis (radians)
+        private float _yaw = -MathHelper.PiOver2; // Without this, you would be started rotated 90 degrees right.
+
+        // The field of view of the camera (radians)
+        private float _fov = MathHelper.PiOver2;
+
+        public Camera(Vector3 position, float aspectRatio)
+        {
+            Position = position;
+            AspectRatio = aspectRatio;
+        }
+
+        // The position of the camera
+        public Vector3 Position { get; set; }
+
+        // This is simply the aspect ratio of the viewport, used for the projection matrix.
+        public float AspectRatio { private get; set; }
+
+        public Vector3 Front => _front;
+
+        public Vector3 Up => _up;
+
+        public Vector3 Right => _right;
+
+        // We convert from degrees to radians as soon as the property is set to improve performance.
+        public float Pitch
+        {
+            get => MathHelper.RadiansToDegrees(_pitch);
+            set
+            {
+                // We clamp the pitch value between -89 and 89 to prevent the camera from going upside down, and a bunch
+                // of weird "bugs" when you are using euler angles for rotation.
+                // If you want to read more about this you can try researching a topic called gimbal lock
+                var angle = MathHelper.Clamp(value, -89f, 89f);
+                _pitch = MathHelper.DegreesToRadians(angle);
+                UpdateVectors();
+            }
+        }
+
+        // We convert from degrees to radians as soon as the property is set to improve performance.
+        public float Yaw
+        {
+            get => MathHelper.RadiansToDegrees(_yaw);
+            set
+            {
+                _yaw = MathHelper.DegreesToRadians(value);
+                UpdateVectors();
+            }
+        }
+
+        // The field of view (FOV) is the vertical angle of the camera view.
+        // This has been discussed more in depth in a previous tutorial,
+        // but in this tutorial, you have also learned how we can use this to simulate a zoom feature.
+        // We convert from degrees to radians as soon as the property is set to improve performance.
+        public float Fov
+        {
+            get => MathHelper.RadiansToDegrees(_fov);
+            set
+            {
+                var angle = MathHelper.Clamp(value, 1f, 90f);
+                _fov = MathHelper.DegreesToRadians(angle);
+            }
+        }
+
+        // Get the view matrix using the amazing LookAt function described more in depth on the web tutorials
+        public Matrix4 GetViewMatrix()
+        {
+            return Matrix4.LookAt(Position, Position + _front, _up);
+        }
+
+        // Get the projection matrix using the same method we have used up until this point
+        public Matrix4 GetProjectionMatrix()
+        {
+            return Matrix4.CreatePerspectiveFieldOfView(_fov, AspectRatio, 0.01f, 100f);
+        }
+
+        // This function is going to update the direction vertices using some of the math learned in the web tutorials.
+        private void UpdateVectors()
+        {
+            // First, the front matrix is calculated using some basic trigonometry.
+            _front.X = MathF.Cos(_pitch) * MathF.Cos(_yaw);
+            _front.Y = MathF.Sin(_pitch);
+            _front.Z = MathF.Cos(_pitch) * MathF.Sin(_yaw);
+
+            // We need to make sure the vectors are all normalized, as otherwise we would get some funky results.
+            _front = Vector3.Normalize(_front);
+
+            // Calculate both the right and the up vector using cross product.
+            // Note that we are calculating the right from the global up; this behaviour might
+            // not be what you need for all cameras so keep this in mind if you do not want a FPS camera.
+            _right = Vector3.Normalize(Vector3.Cross(_front, Vector3.UnitY));
+            _up = Vector3.Normalize(Vector3.Cross(_right, _front));
+        }
+    }
+
+
+
+        public class Texture{
          int Handle{get;set;}
          public Texture(string path,TextureUnit unit = TextureUnit.Texture0){
          Handle  = GL.GenTexture();
@@ -182,6 +297,7 @@ namespace EON.Native
         }
     }
 
+   
 
     public class Native : GameWindow
     {
@@ -222,7 +338,8 @@ namespace EON.Native
            float[] vertices = {
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
      0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,///Face one
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f, ///Face one
+     
      0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -230,13 +347,15 @@ namespace EON.Native
     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
      0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
      0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     
      0.5f,  0.5f,  0.5f,  1.0f, 1.0f,//Face two
     -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
 
     -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
     -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,//Face three
+    
     -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
     -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
@@ -244,13 +363,15 @@ namespace EON.Native
      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
      0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
      0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,//face four
      0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 
     -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
      0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,//Face five
+    
      0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
     -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
@@ -258,7 +379,8 @@ namespace EON.Native
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
      0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,//Face six
     -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
@@ -275,46 +397,41 @@ namespace EON.Native
         /**
            
             0       3
-
-
-            1       2    
-
-        
+            1       2
         */
 
         
-        protected override void OnUpdateFrame(FrameEventArgs args)
-        {
-            base.OnUpdateFrame(args);
 
-            KeyboardState input = KeyboardState;
-
-            if (input.IsKeyDown(Keys.Escape))
-            {
-                Close();
-            }
-        }
 
 
         Matrix4 _view;
         Matrix4 _projection;
+        Camera _camera;
 
+
+        private bool _firstMove = true;
+
+        private Vector2 _lastPos;
+
+  
         protected override void OnLoad()
         {
             base.OnLoad();
+            GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+            
             VertextArrayObject = GL.GenVertexArray();
             GL.BindVertexArray(VertextArrayObject);
             
-            GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
             VertexBufferObject = GL.GenBuffer();
      
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
             GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
 
-            ElementBufferObject = GL.GenBuffer();
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
+           // ElementBufferObject = GL.GenBuffer();
+           // GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
+           // GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
             
             shaderP = new Shader(this.ShaderVert, this.ShaderFrg);
             shaderP.Use();
@@ -331,8 +448,8 @@ namespace EON.Native
 
          
 
-            texWall =  new Texture(Path.GetFullPath(@"../Texture/wall.jpg"));
-            texFace =  new Texture(Path.GetFullPath(@"../Texture/awesomeface.png"),TextureUnit.Texture1);
+            texWall =  new Texture(Path.GetFullPath(@"../Texture/wall.jpeg"));
+            texFace =  new Texture(Path.GetFullPath(@"../Texture/wall.jpeg"),TextureUnit.Texture1);
 
             shaderP.SetInt("texture0", 0);
             shaderP.SetInt("texture1", 1);
@@ -340,8 +457,16 @@ namespace EON.Native
 
             _view = Matrix4.CreateTranslation(0.0f,0.0f,-3.0f);
             _projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45f),Size.X/(float)Size.Y,0.1f,100.0f);
+         
+             _camera =  new Camera(Vector3.UnitZ*3,Size.X/(float)Size.Y);
+
+
+
+             CursorState = CursorState.Grabbed;
+
              GL.Enable(EnableCap.DepthTest);
 
+      
 
         }
         float rot = -55.0f;
@@ -350,6 +475,8 @@ namespace EON.Native
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
+                        Title = $"EON: (Vsync: {VSync}) FPS: {1f / e.Time:0}";
+
             GL.Clear(ClearBufferMask.ColorBufferBit|ClearBufferMask.DepthBufferBit);
 
             //transformation
@@ -366,11 +493,15 @@ namespace EON.Native
              if (shaderP != null)
             {
 
-             
+             for(int i =0;i<3;i++){
+             var trans = Matrix4.CreateTranslation(i, i, i);
+
+             model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time))*trans;
              shaderP.SetMatrix4("model", model);
-             shaderP.SetMatrix4("view", _view);
-             shaderP.SetMatrix4("projection", _projection);
-             
+             shaderP.SetMatrix4("view", _camera.GetViewMatrix());
+             shaderP.SetMatrix4("projection", _camera.GetProjectionMatrix());
+
+
              //set uniform
              shaderP?.Use();
              
@@ -378,6 +509,26 @@ namespace EON.Native
              
              GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
 
+
+             }
+            //       for(int i =0;i<4;i++){
+            //  var trans = Matrix4.CreateTranslation(i+1, i+1, i+1);
+
+            //  model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time))*trans;
+            //  shaderP.SetMatrix4("model", model);
+            //  shaderP.SetMatrix4("view", _camera.GetViewMatrix());
+            //  shaderP.SetMatrix4("projection", _camera.GetProjectionMatrix());
+
+
+            //  //set uniform
+            //  shaderP?.Use();
+             
+            //  GL.BindVertexArray(VertextArrayObject);
+             
+            //  GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+
+
+            //  }
             // GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
              SwapBuffers();
             }
@@ -387,7 +538,11 @@ namespace EON.Native
 
             base.OnResize(e);
 
-            GL.Viewport(0, 0, e.Width, e.Height);
+          
+            GL.Viewport(0, 0, Size.X, Size.Y);
+
+            _camera.AspectRatio = Size.X / (float)Size.Y;
+
         }
 
         protected override void OnUnload()
@@ -398,7 +553,84 @@ namespace EON.Native
 
             }
         }
+          protected override void OnUpdateFrame(FrameEventArgs e)
+        {
+            base.OnUpdateFrame(e);
+
+            if (!IsFocused) // Check to see if the window is focused
+            {
+                return;
+            }
+
+            var input = KeyboardState;
+
+            if (input.IsKeyDown(Keys.Escape))
+            {
+                Close();
+            }
+
+            const float cameraSpeed = 1.5f;
+            const float sensitivity = 0.2f;
+
+            if (input.IsKeyDown(Keys.W))
+            {
+                _camera.Position += _camera.Front * cameraSpeed * (float)e.Time; // Forward
+            }
+
+            if (input.IsKeyDown(Keys.S))
+            {
+                _camera.Position -= _camera.Front * cameraSpeed * (float)e.Time; // Backwards
+            }
+            if (input.IsKeyDown(Keys.A))
+            {
+                _camera.Position -= _camera.Right * cameraSpeed * (float)e.Time; // Left
+            }
+            if (input.IsKeyDown(Keys.D))
+            {
+                _camera.Position += _camera.Right * cameraSpeed * (float)e.Time; // Right
+            }
+            if (input.IsKeyDown(Keys.Space))
+            {
+                _camera.Position += _camera.Up * cameraSpeed * (float)e.Time; // Up
+            }
+            if (input.IsKeyDown(Keys.LeftShift))
+            {
+                _camera.Position -= _camera.Up * cameraSpeed * (float)e.Time; // Down
+            }
+
+            // Get the mouse state
+            var mouse = MouseState;
+
+            if (_firstMove) // This bool variable is initially set to true.
+            {
+                _lastPos = new Vector2(mouse.X, mouse.Y);
+                _firstMove = false;
+            }
+            else
+            {
+                // Calculate the offset of the mouse position
+                var deltaX = mouse.X - _lastPos.X;
+                var deltaY = mouse.Y - _lastPos.Y;
+                _lastPos = new Vector2(mouse.X, mouse.Y);
+
+                // Apply the camera pitch and yaw (we clamp the pitch in the camera class)
+                _camera.Yaw += deltaX * sensitivity;
+                _camera.Pitch -= deltaY * sensitivity; // Reversed since y-coordinates range from bottom to top
+            }
+        }
+
+        // In the mouse wheel function, we manage all the zooming of the camera.
+        // This is simply done by changing the FOV of the camera.
+        protected override void OnMouseWheel(MouseWheelEventArgs e)
+        {
+            base.OnMouseWheel(e);
+            
+            _camera.Fov -= e.OffsetY;
+        }
+
+      
 
      
     }
 }
+
