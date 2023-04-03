@@ -427,7 +427,7 @@ namespace EON.Native
      
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.DynamicDraw);
 
            // ElementBufferObject = GL.GenBuffer();
            // GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
@@ -472,10 +472,13 @@ namespace EON.Native
         float rot = -55.0f;
         //float scale1=0.1f;   
         double _time=0.0f;
+        float moveLeft=0;
+        float moveright=0;     
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
-                        Title = $"EON: (Vsync: {VSync}) FPS: {1f / e.Time:0}";
+            
+            Title = $"EON: (Vsync: {VSync}) FPS: {1f / e.Time:0}";
 
             GL.Clear(ClearBufferMask.ColorBufferBit|ClearBufferMask.DepthBufferBit);
 
@@ -493,8 +496,28 @@ namespace EON.Native
              if (shaderP != null)
             {
 
-             for(int i =0;i<3;i++){
-             var trans = Matrix4.CreateTranslation(i, i, i);
+             for(int i =0;i<1;i++){
+             var trans = Matrix4.CreateTranslation((float)(i + moveright), i, i);
+             var scal = Matrix4.CreateScale(1,1,1);
+
+             model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time))*trans*scal;
+             shaderP.SetMatrix4("model", model);
+             shaderP.SetMatrix4("view", _camera.GetViewMatrix());
+             shaderP.SetMatrix4("projection", _camera.GetProjectionMatrix());
+
+
+             //set uniform
+             shaderP?.Use();
+             
+             GL.BindVertexArray(VertextArrayObject);
+             
+             GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+  
+
+             }
+
+             for(int i =0;i<1;i++){
+             var trans = Matrix4.CreateTranslation(4, 4, 4);
 
              model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time))*trans;
              shaderP.SetMatrix4("model", model);
@@ -511,6 +534,8 @@ namespace EON.Native
 
 
              }
+
+             
             //       for(int i =0;i<4;i++){
             //  var trans = Matrix4.CreateTranslation(i+1, i+1, i+1);
 
@@ -575,6 +600,13 @@ namespace EON.Native
             if (input.IsKeyDown(Keys.W))
             {
                 _camera.Position += _camera.Front * cameraSpeed * (float)e.Time; // Forward
+            }
+
+            if(input.IsKeyDown(Keys.Right)){
+                moveright = (float)(0.1 + moveright);
+            }
+             if(input.IsKeyDown(Keys.Left)){
+                moveright=(float)(moveright-0.1);
             }
 
             if (input.IsKeyDown(Keys.S))
