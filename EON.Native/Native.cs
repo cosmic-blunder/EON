@@ -473,7 +473,10 @@ namespace EON.Native
         //float scale1=0.1f;   
         double _time=0.0f;
         float moveLeft=0;
-        float moveright=0;     
+        float moveright=0; 
+
+        float moveDown = 0;
+
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
@@ -486,10 +489,6 @@ namespace EON.Native
             _time+=4.0*e.Time;
 
             Matrix4 model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time));
-            
-           
-
-
             texWall.Use(TextureUnit.Texture0);
             texFace.Use(TextureUnit.Texture1);
              
@@ -497,8 +496,8 @@ namespace EON.Native
             {
 
              for(int i =0;i<1;i++){
-             var trans = Matrix4.CreateTranslation((float)(i + moveright), i, i);
-             var scal = Matrix4.CreateScale(1,1,1);
+             var trans = Matrix4.CreateTranslation((float)(i + moveright), (float)(i+moveDown), i);
+             var scal = Matrix4.CreateScale(3,3,3);
 
              model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time))*trans*scal;
              shaderP.SetMatrix4("model", model);
@@ -520,6 +519,7 @@ namespace EON.Native
              var trans = Matrix4.CreateTranslation(4, 4, 4);
 
              model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time))*trans;
+
              shaderP.SetMatrix4("model", model);
              shaderP.SetMatrix4("view", _camera.GetViewMatrix());
              shaderP.SetMatrix4("projection", _camera.GetProjectionMatrix());
@@ -536,25 +536,7 @@ namespace EON.Native
              }
 
              
-            //       for(int i =0;i<4;i++){
-            //  var trans = Matrix4.CreateTranslation(i+1, i+1, i+1);
-
-            //  model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time))*trans;
-            //  shaderP.SetMatrix4("model", model);
-            //  shaderP.SetMatrix4("view", _camera.GetViewMatrix());
-            //  shaderP.SetMatrix4("projection", _camera.GetProjectionMatrix());
-
-
-            //  //set uniform
-            //  shaderP?.Use();
-             
-            //  GL.BindVertexArray(VertextArrayObject);
-             
-            //  GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
-
-
-            //  }
-            // GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
+         
              SwapBuffers();
             }
         }
@@ -594,7 +576,7 @@ namespace EON.Native
                 Close();
             }
 
-            const float cameraSpeed = 1.5f;
+            const float cameraSpeed = 4.5f;
             const float sensitivity = 0.2f;
 
             if (input.IsKeyDown(Keys.W))
@@ -607,6 +589,13 @@ namespace EON.Native
             }
              if(input.IsKeyDown(Keys.Left)){
                 moveright=(float)(moveright-0.1);
+            }
+
+            if(input.IsKeyDown(Keys.Down)){
+                 moveDown = (float)(moveDown-0.01);
+            }
+            if(input.IsKeyDown(Keys.Up)){
+                 moveDown = (float)(moveDown+0.01);
             }
 
             if (input.IsKeyDown(Keys.S))
