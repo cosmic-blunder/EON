@@ -12,6 +12,70 @@ using OpenTK.Mathematics;
 
 namespace EON.Native
 {
+    class CubeDraw{
+
+   //cube coordinates
+   float[] vertices = {
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f, ///Face one
+     
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,//Face two
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,//Face three
+    
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,//face four
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,//Face five
+    
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,//Face six
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+};
+
+
+       public void LoadDataAndTextures(){
+
+
+       }  
+ 
+          public void Draw(){
+                  
+                  //draw the cube
+          }
+    }
 
    // This is the camera class as it could be set up after the tutorials on the website.
     // It is important to note there are a few ways you could have set up this camera.
@@ -301,14 +365,11 @@ namespace EON.Native
 
     public class Native : GameWindow
     {
-        static System.Timers.Timer _timer = new System.Timers.Timer(1000); //one second
-
+  
         string ShaderFrg  = Path.GetFullPath(@"../shader/shader.frag");
         string ShaderVert = Path.GetFullPath(@"../shader/shader.vert");
 
-        double elapsed;
         int VertexBufferObject;
-        int ElementBufferObject;
         public Shader? shaderP;
         public int VertextArrayObject;
        
@@ -404,8 +465,6 @@ namespace EON.Native
 
 
 
-        Matrix4 _view;
-        Matrix4 _projection;
         Camera _camera;
 
 
@@ -455,8 +514,8 @@ namespace EON.Native
             shaderP.SetInt("texture1", 1);
 
 
-            _view = Matrix4.CreateTranslation(0.0f,0.0f,-3.0f);
-            _projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45f),Size.X/(float)Size.Y,0.1f,100.0f);
+            //_view = Matrix4.CreateTranslation(0.0f,0.0f,-3.0f);
+            //_projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45f),Size.X/(float)Size.Y,0.1f,100.0f);
          
              _camera =  new Camera(Vector3.UnitZ*3,Size.X/(float)Size.Y);
 
@@ -481,7 +540,7 @@ namespace EON.Native
         {
             base.OnRenderFrame(e);
             
-            Title = $"EON: (Vsync: {VSync}) FPS: {1f / e.Time:0}";
+            Title = $"EON Test: (Vsync: {VSync}) FPS: {1f / e.Time:0}";
 
             GL.Clear(ClearBufferMask.ColorBufferBit|ClearBufferMask.DepthBufferBit);
 
@@ -495,7 +554,7 @@ namespace EON.Native
              if (shaderP != null)
             {
 
-             for(int i =0;i<1;i++){
+             for(int i =0;i<3;i++){
              var trans = Matrix4.CreateTranslation((float)(i + moveright), (float)(i+moveDown), i);
              var scal = Matrix4.CreateScale(3,3,3);
 
@@ -515,25 +574,7 @@ namespace EON.Native
 
              }
 
-             for(int i =0;i<1;i++){
-             var trans = Matrix4.CreateTranslation(4, 4, 4);
-
-             model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time))*trans;
-
-             shaderP.SetMatrix4("model", model);
-             shaderP.SetMatrix4("view", _camera.GetViewMatrix());
-             shaderP.SetMatrix4("projection", _camera.GetProjectionMatrix());
-
-
-             //set uniform
-             shaderP?.Use();
-             
-             GL.BindVertexArray(VertextArrayObject);
-             
-             GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
-
-
-             }
+    
 
              
          
