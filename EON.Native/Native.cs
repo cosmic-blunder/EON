@@ -13,7 +13,25 @@ using OpenTK.Mathematics;
 namespace EON.Native
 {
     class CubeDraw{
+        
+        //float scale1=0.1f;   
+        double _time=0.0f;
+      
+        float moveright=0; 
 
+        float moveDown = 0;
+        string ShaderFrg  = Path.GetFullPath(@"../shader/shader.frag");
+        string ShaderVert = Path.GetFullPath(@"../shader/shader.vert");
+
+        int VertexBufferObject;
+        public Shader? shaderP;
+        public int VertextArrayObject;
+
+
+        
+        //textures
+        Texture? texWall {get;set;}
+        Texture texFace{ get;set;}
    //cube coordinates
    float[] vertices = {
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -69,12 +87,75 @@ namespace EON.Native
        public void LoadDataAndTextures(){
 
 
+            
+            VertextArrayObject = GL.GenVertexArray();
+            GL.BindVertexArray(VertextArrayObject);
+            
+            VertexBufferObject = GL.GenBuffer();
+     
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.DynamicDraw);
+
+           // ElementBufferObject = GL.GenBuffer();
+           // GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
+           // GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
+            
+            shaderP = new Shader(this.ShaderVert, this.ShaderFrg);
+            shaderP.Use();
+            
+            var vertexLocation = shaderP.GetAttrib("aPosition");
+            GL.EnableVertexAttribArray(vertexLocation);
+            
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
+            GL.EnableVertexAttribArray(0);
+
+            int texCoord = shaderP.GetAttrib("aTexCoord");
+            GL.VertexAttribPointer(texCoord,2,VertexAttribPointerType.Float,false,5*sizeof(float),3*sizeof(float));
+            GL.EnableVertexAttribArray(texCoord);
+
+         
+
+            texWall =  new Texture(Path.GetFullPath(@"../Texture/wall.jpeg"));
+            texFace =  new Texture(Path.GetFullPath(@"../Texture/wall.jpeg"),TextureUnit.Texture1);
+
+            shaderP.SetInt("texture0", 0);
+            shaderP.SetInt("texture1", 1);
        }  
  
-          public void Draw(){
-                  
+          public void Draw(Camera _camera,FrameEventArgs e){
+                       //transformation
+            _time+=4.0*e.Time;
+
+            Matrix4 model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time));
+            texWall.Use(TextureUnit.Texture0);
+            texFace.Use(TextureUnit.Texture1);
+             
+             if (shaderP != null)
+            {
+
+             for(int i =0;i<3;i++){
+             var trans = Matrix4.CreateTranslation((float)(i + moveright), (float)(i+moveDown), i);
+             var scal = Matrix4.CreateScale(3,3,3);
+
+             model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time))*trans*scal;
+             shaderP.SetMatrix4("model", model);
+             shaderP.SetMatrix4("view", _camera.GetViewMatrix());
+             shaderP.SetMatrix4("projection", _camera.GetProjectionMatrix());
+
+
+             //set uniform
+             shaderP?.Use();
+             
+             GL.BindVertexArray(VertextArrayObject);
+             
+             GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+  
+
+             }
                   //draw the cube
           }
+    }
     }
 
    // This is the camera class as it could be set up after the tutorials on the website.
@@ -376,7 +457,6 @@ namespace EON.Native
 
        //tranformations
 
-       Matrix4 matrix{get;set;}
        
        int Width {get;set;}
        int Height {get;set;}
@@ -528,10 +608,10 @@ namespace EON.Native
       
 
         }
-        float rot = -55.0f;
+ 
         //float scale1=0.1f;   
         double _time=0.0f;
-        float moveLeft=0;
+      
         float moveright=0; 
 
         float moveDown = 0;
@@ -694,5 +774,6 @@ namespace EON.Native
 
      
     }
-}
 
+    
+}
