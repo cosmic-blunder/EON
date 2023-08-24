@@ -411,16 +411,13 @@ namespace EON.Native
         {
 
             Matrix4 model;
-
-
+            
             texWall?.Use(TextureUnit.Texture0);
             texFace?.Use(TextureUnit.Texture1);
 
             if (shaderP != null && _camera != null)
             {
-                for (int i = 0; i < 1; i++)
-                {
-                    var trans = Matrix4.CreateTranslation((float)(moveright), (float)(i + moveDown), 0);
+                    var trans = Matrix4.CreateTranslation((float)moveright, (float)(moveDown), 0);
                     var scal = Matrix4.CreateScale(1, 1, 1);
 
                     model = trans * scal;//Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time))*
@@ -438,7 +435,6 @@ namespace EON.Native
                     GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
 
 
-                }
 
 
                 //       SwapBuffers();
