@@ -1,4 +1,4 @@
-﻿using OpenTK.Graphics.OpenGL4;
+using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -9,162 +9,19 @@ using System;
 using StbImageSharp;
 using System.IO;
 using OpenTK.Mathematics;
+using System.Dynamic;
 
 namespace EON.Native
 {
-    class CubeDraw{
-        
-        //float scale1=0.1f;   
-        double _time=0.0f;
-      
-        float moveright=0; 
 
-        float moveDown = 0;
-        string ShaderFrg  = Path.GetFullPath(@"../shader/shader.frag");
-        string ShaderVert = Path.GetFullPath(@"../shader/shader.vert");
-
-        int VertexBufferObject;
-        public Shader? shaderP;
-        public int VertextArrayObject;
-
-
-        
-        //textures
-        Texture? texWall {get;set;}
-        Texture texFace{ get;set;}
-   //cube coordinates
-   float[] vertices = {
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f, ///Face one
-     
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-     
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,//Face two
-    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,//Face three
-    
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,//face four
-     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,//Face five
-    
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,//Face six
-    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-};
-
-
-       public void LoadDataAndTextures(){
-
-
-            
-            VertextArrayObject = GL.GenVertexArray();
-            GL.BindVertexArray(VertextArrayObject);
-            
-            VertexBufferObject = GL.GenBuffer();
-     
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.DynamicDraw);
-
-           // ElementBufferObject = GL.GenBuffer();
-           // GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
-           // GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
-            
-            shaderP = new Shader(this.ShaderVert, this.ShaderFrg);
-            shaderP.Use();
-            
-            var vertexLocation = shaderP.GetAttrib("aPosition");
-            GL.EnableVertexAttribArray(vertexLocation);
-            
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
-            GL.EnableVertexAttribArray(0);
-
-            int texCoord = shaderP.GetAttrib("aTexCoord");
-            GL.VertexAttribPointer(texCoord,2,VertexAttribPointerType.Float,false,5*sizeof(float),3*sizeof(float));
-            GL.EnableVertexAttribArray(texCoord);
-
-         
-
-            texWall =  new Texture(Path.GetFullPath(@"../Texture/wall.jpeg"));
-            texFace =  new Texture(Path.GetFullPath(@"../Texture/wall.jpeg"),TextureUnit.Texture1);
-
-            shaderP.SetInt("texture0", 0);
-            shaderP.SetInt("texture1", 1);
-       }  
- 
-          public void Draw(Camera _camera,FrameEventArgs e){
-                       //transformation
-            _time+=4.0*e.Time;
-
-            Matrix4 model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time));
-            texWall.Use(TextureUnit.Texture0);
-            texFace.Use(TextureUnit.Texture1);
-             
-             if (shaderP != null)
-            {
-
-             for(int i =0;i<3;i++){
-             var trans = Matrix4.CreateTranslation((float)(i + moveright), (float)(i+moveDown), i);
-             var scal = Matrix4.CreateScale(3,3,3);
-
-             model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time))*trans*scal;
-             shaderP.SetMatrix4("model", model);
-             shaderP.SetMatrix4("view", _camera.GetViewMatrix());
-             shaderP.SetMatrix4("projection", _camera.GetProjectionMatrix());
-
-
-             //set uniform
-             shaderP?.Use();
-             
-             GL.BindVertexArray(VertextArrayObject);
-             
-             GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
-  
-
-             }
-                  //draw the cube
-          }
-    }
-    }
-
-   // This is the camera class as it could be set up after the tutorials on the website.
+    // This is the camera class as it could be set up after the tutorials on the website.
     // It is important to note there are a few ways you could have set up this camera.
     // For example, you could have also managed the player input inside the camera class,
     // and a lot of the properties could have been made into functions.
 
     // TL;DR: This is just one of many ways in which we could have set up the camera.
     // Check out the web version if you don't know why we are doing a specific thing or want to know more about the code.
+
     public class Camera
     {
         // Those vectors are directions pointing outwards from the camera to define how it rotated.
@@ -271,57 +128,60 @@ namespace EON.Native
             _up = Vector3.Normalize(Vector3.Cross(_right, _front));
         }
     }
+    public class Texture
+    {
+        int Handle { get; set; }
+        public Texture(string path, TextureUnit unit = TextureUnit.Texture0)
+        {
+            Handle = GL.GenTexture();
+
+            Use(unit);
+            //loading texture
+            StbImage.stbi_set_flip_vertically_on_load(1);
+            using (Stream stream = File.OpenRead(path))
+            {
+
+                ImageResult image = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
 
 
+                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, image.Width, image.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
 
-        public class Texture{
-         int Handle{get;set;}
-         public Texture(string path,TextureUnit unit = TextureUnit.Texture0){
-         Handle  = GL.GenTexture();
-     
-         Use(unit);
-         //loading texture
-         StbImage.stbi_set_flip_vertically_on_load(1);
-         using(Stream stream = File.OpenRead(path)){
+                // First, we set the min and mag filter. These are used for when the texture is scaled down and up, respectively.
+                // Here, we use Linear for both. This means that OpenGL will try to blend pixels, meaning that textures scaled too far will look blurred.
+                // You could also use (amongst other options) Nearest, which just grabs the nearest pixel, which makes the texture look pixelated if scaled too far.
+                // NOTE: The default settings for both of these are LinearMipmap. If you leave these as default but don't generate mipmaps,
+                // your image will fail to render at all (usually resulting in pure black instead).
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
 
-         ImageResult image  = ImageResult.FromStream(stream,ColorComponents.RedGreenBlueAlpha);
+                // Now, set the wrapping mode. S is for the X axis, and T is for the Y axis.
+                // We set this to Repeat so that textures will repeat when wrapped. Not demonstrated here since the texture coordinates exactly match
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+                GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+            }
 
-
-         GL.TexImage2D(TextureTarget.Texture2D,0,PixelInternalFormat.Rgba,image.Width,image.Height,0,PixelFormat.Rgba,PixelType.UnsignedByte,image.Data);
-        
-             // First, we set the min and mag filter. These are used for when the texture is scaled down and up, respectively.
-            // Here, we use Linear for both. This means that OpenGL will try to blend pixels, meaning that textures scaled too far will look blurred.
-            // You could also use (amongst other options) Nearest, which just grabs the nearest pixel, which makes the texture look pixelated if scaled too far.
-            // NOTE: The default settings for both of these are LinearMipmap. If you leave these as default but don't generate mipmaps,
-            // your image will fail to render at all (usually resulting in pure black instead).
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-
-            // Now, set the wrapping mode. S is for the X axis, and T is for the Y axis.
-            // We set this to Repeat so that textures will repeat when wrapped. Not demonstrated here since the texture coordinates exactly match
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
-            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
-         }
-        
         }
-        public void Use(TextureUnit unit = TextureUnit.Texture0){
-          GL.ActiveTexture(unit);
+        public void Use(TextureUnit unit = TextureUnit.Texture0)
+        {
+            GL.ActiveTexture(unit);
 
-          GL.BindTexture(TextureTarget.Texture2D,Handle);
-          
+            GL.BindTexture(TextureTarget.Texture2D, Handle);
+
         }
-}
+    }
+
     public class Shader
     {
-      public  int Handle;
+        public int Handle;
         int VertexShader;
         int FragmentShader;
         int shader;
         int status;
 
         private readonly Dictionary<string, int> _uniformLocations;
-        public Shader(string vertextPath, string fragmentPath) {
+        public Shader(string vertextPath, string fragmentPath)
+        {
             string VertexShaderSource = File.ReadAllText(vertextPath);
             string FragmentShaderSource = File.ReadAllText(fragmentPath);
 
@@ -371,14 +231,14 @@ namespace EON.Native
 
             GL.DeleteShader(FragmentShader);
             GL.DeleteShader(VertexShader);
-            
-                 // The shader is now ready to go, but first, we're going to cache all the shader uniform locations.
+
+            // The shader is now ready to go, but first, we're going to cache all the shader uniform locations.
             // Querying this from the shader is very slow, so we do it once on initialization and reuse those values
             // later.
 
-             int  numberOfUniforms;
+            int numberOfUniforms;
             // First, we have to get the number of active uniforms in the shader.
-            GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out numberOfUniforms );
+            GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out numberOfUniforms);
 
             // Next, allocate the dictionary to hold the locations.
             _uniformLocations = new Dictionary<string, int>();
@@ -400,23 +260,25 @@ namespace EON.Native
         }
 
 
-        public void SetInt(string name , int val){
-            int location   = GL.GetUniformLocation(Handle,name);
+        public void SetInt(string name, int val)
+        {
+            int location = GL.GetUniformLocation(Handle, name);
 
-            GL.Uniform1(location,val);
+            GL.Uniform1(location, val);
         }
 
-       public void SetMatrix4(string name, Matrix4 data)
+        public void SetMatrix4(string name, Matrix4 data)
         {
             GL.UseProgram(Handle);//load shader and changke the uniforms variables state.
-            GL.UniformMatrix4(_uniformLocations[name],true, ref data);
+            GL.UniformMatrix4(_uniformLocations[name], true, ref data);
         }
 
 
-       public  int GetAttrib(string name){
-           return GL.GetAttribLocation(this.Handle,name);
-       }
-            public void Use()
+        public int GetAttrib(string name)
+        {
+            return GL.GetAttribLocation(this.Handle, name);
+        }
+        public void Use()
         {
             GL.UseProgram(Handle);
         }
@@ -442,41 +304,39 @@ namespace EON.Native
         }
     }
 
-   
 
-    public class Native : GameWindow
+    public class Cube
     {
-  
-        string ShaderFrg  = Path.GetFullPath(@"../shader/shader.frag");
-        string ShaderVert = Path.GetFullPath(@"../shader/shader.vert");
 
-        int VertexBufferObject;
-        public Shader? shaderP;
-        public int VertextArrayObject;
-       
+        public int VertextArrayObject { get; private set; }
+        public int VertexBufferObject { get; private set; }
+        public string ShaderFrg { get; private set; }
+        public string ShaderVert { get; private set; }
 
-       //tranformations
 
-       
-       int Width {get;set;}
-       int Height {get;set;}
-
-        public Native(int width, int height, string title) :
-          base(GameWindowSettings.Default,
-                new NativeWindowSettings() { Size = (width, height), Title = title })
+        public void OnUpdate(KeyboardState input)
         {
-                this.Width = width;
-                this.Height=height;
+            if (input.IsKeyDown(Keys.Right))
+            {
+                moveright = (float)(0.1 + moveright);
+            }
+            if (input.IsKeyDown(Keys.Left))
+            {
+                moveright = (float)(moveright - 0.1);
+            }
 
-                texWall=null;
+            if (input.IsKeyDown(Keys.Down))
+            {
+                moveDown = (float)(moveDown - 0.01);
+            }
+            if (input.IsKeyDown(Keys.Up))
+            {
+                moveDown = (float)(moveDown + 0.01);
+            }
+
         }
-        public float[] vertices1 = {
-                 0.5f, 0.5f,0.0f,1.0f,1.0f,//top right
-                 0.5f,-0.5f,0.0f,1.0f,0.0f, //Bottom  right vertix
-                -0.5f,-0.5f,0.0f,0.0f,0.0f,//bottom left
-                -0.5f, 0.5f,0.0f,0.0f,1.0f  //top  left
-           };
-           float[] vertices = {
+        readonly float[] vertices = {
+    //Faces of cubes by trainges 
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
      0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
      0.5f,  0.5f, -0.5f,  1.0f, 1.0f, ///Face one
@@ -488,7 +348,7 @@ namespace EON.Native
     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
      0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
      0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-     
+
      0.5f,  0.5f,  0.5f,  1.0f, 1.0f,//Face two
     -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
@@ -504,7 +364,7 @@ namespace EON.Native
      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
      0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
      0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    
+
      0.5f, -0.5f, -0.5f,  0.0f, 1.0f,//face four
      0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
@@ -520,153 +380,178 @@ namespace EON.Native
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
      0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    
+
      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,//Face six
     -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
+        private Shader? shaderP;
+        private Texture? texWall;
+        private Texture? texFace;
 
-        uint[] indices =  {
-            0,1,3,
-            1,2,3
-        };
+        private Camera? _camera { get; set; }
+        private float moveDown;
+        private float moveright;
 
-        //textures
-        Texture? texWall {get;set;}
-        Texture texFace{ get;set;}
+        public Cube()
+        {
 
-        /**
-           
-            0       3
-            1       2
-        */
+            ShaderFrg = Path.GetFullPath(@"../shader/shader.frag");
+            ShaderVert = Path.GetFullPath(@"../shader/shader.vert");
 
-        
+        }
+
+        public void setCamera(Camera camera)
+        {
+
+            _camera = camera;
+        }
+
+        public void Draw()
+        {
+
+            Matrix4 model;
 
 
+            texWall?.Use(TextureUnit.Texture0);
+            texFace?.Use(TextureUnit.Texture1);
+
+            if (shaderP != null && _camera != null)
+            {
+                for (int i = 0; i < 1; i++)
+                {
+                    var trans = Matrix4.CreateTranslation((float)(moveright), (float)(i + moveDown), 0);
+                    var scal = Matrix4.CreateScale(1, 1, 1);
+
+                    model = trans * scal;//Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time))*
+                    shaderP?.SetMatrix4("model", model);
+
+                    shaderP?.SetMatrix4("view", _camera.GetViewMatrix());
+                    shaderP?.SetMatrix4("projection", _camera.GetProjectionMatrix());
+
+
+                    //set uniform
+                    shaderP?.Use();
+
+                    GL.BindVertexArray(VertextArrayObject);
+
+                    GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+
+
+                }
+
+
+                //       SwapBuffers();
+            }
+        }
+        public void Load()
+        {
+
+
+
+            VertextArrayObject = GL.GenVertexArray();
+            GL.BindVertexArray(VertextArrayObject);
+
+            VertexBufferObject = GL.GenBuffer();
+
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.DynamicDraw);
+
+            // ElementBufferObject = GL.GenBuffer();
+            // GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
+            // GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
+
+            shaderP = new Shader(this.ShaderVert, this.ShaderFrg);
+            shaderP.Use();
+
+            var vertexLocation = shaderP.GetAttrib("aPosition");
+            GL.EnableVertexAttribArray(vertexLocation);
+
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
+            GL.EnableVertexAttribArray(0);
+
+            int texCoord = shaderP.GetAttrib("aTexCoord");
+            GL.VertexAttribPointer(texCoord, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
+            GL.EnableVertexAttribArray(texCoord);
+
+
+
+            texWall = new Texture(Path.GetFullPath(@"../Texture/gray.jpg"));
+            texFace = new Texture(Path.GetFullPath(@"../Texture/gray.jpg"), TextureUnit.Texture1);
+
+            shaderP.SetInt("texture0", 0);
+            shaderP.SetInt("texture1", 1);
+        }
+
+
+        public void Dispose()
+        {
+            shaderP?.Disposed();
+        }
+    }
+
+    public class Native : GameWindow
+    {
+
+
+
+        //tranformations
+
+
+        int Width { get; set; }
+        int Height { get; set; }
+
+        public Native(int width, int height, string title) :
+          base(GameWindowSettings.Default,
+                new NativeWindowSettings() { Size = (width, height), Title = title })
+        {
+            this.Width = width;
+            this.Height = height;
+            cube = new Cube();
+
+        }
 
         Camera _camera;
-
-
+        Cube cube;
         private bool _firstMove = true;
-
         private Vector2 _lastPos;
-
-  
         protected override void OnLoad()
         {
             base.OnLoad();
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-            
-            VertextArrayObject = GL.GenVertexArray();
-            GL.BindVertexArray(VertextArrayObject);
-            
-            VertexBufferObject = GL.GenBuffer();
-     
+            _camera = new Camera(Vector3.UnitZ * 3, Size.X / (float)Size.Y);
 
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.DynamicDraw);
+            cube.setCamera(_camera);
+            cube.Load();
+            CursorState = CursorState.Grabbed;
 
-           // ElementBufferObject = GL.GenBuffer();
-           // GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferObject);
-           // GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
-            
-            shaderP = new Shader(this.ShaderVert, this.ShaderFrg);
-            shaderP.Use();
-            
-            var vertexLocation = shaderP.GetAttrib("aPosition");
-            GL.EnableVertexAttribArray(vertexLocation);
-            
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
-            GL.EnableVertexAttribArray(0);
-
-            int texCoord = shaderP.GetAttrib("aTexCoord");
-            GL.VertexAttribPointer(texCoord,2,VertexAttribPointerType.Float,false,5*sizeof(float),3*sizeof(float));
-            GL.EnableVertexAttribArray(texCoord);
-
-         
-
-            texWall =  new Texture(Path.GetFullPath(@"../Texture/wall.jpeg"));
-            texFace =  new Texture(Path.GetFullPath(@"../Texture/wall.jpeg"),TextureUnit.Texture1);
-
-            shaderP.SetInt("texture0", 0);
-            shaderP.SetInt("texture1", 1);
-
-
-            //_view = Matrix4.CreateTranslation(0.0f,0.0f,-3.0f);
-            //_projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45f),Size.X/(float)Size.Y,0.1f,100.0f);
-         
-             _camera =  new Camera(Vector3.UnitZ*3,Size.X/(float)Size.Y);
-
-
-
-             CursorState = CursorState.Grabbed;
-
-             GL.Enable(EnableCap.DepthTest);
-
-      
-
+            GL.Enable(EnableCap.DepthTest);
         }
- 
-        //float scale1=0.1f;   
-        double _time=0.0f;
-      
-        float moveright=0; 
 
-        float moveDown = 0;
+
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
-            
+
             Title = $"EON Test: (Vsync: {VSync}) FPS: {1f / e.Time:0}";
 
-            GL.Clear(ClearBufferMask.ColorBufferBit|ClearBufferMask.DepthBufferBit);
-
-            //transformation
-            _time+=4.0*e.Time;
-
-            Matrix4 model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time));
-            texWall.Use(TextureUnit.Texture0);
-            texFace.Use(TextureUnit.Texture1);
-             
-             if (shaderP != null)
-            {
-
-             for(int i =0;i<3;i++){
-             var trans = Matrix4.CreateTranslation((float)(i + moveright), (float)(i+moveDown), i);
-             var scal = Matrix4.CreateScale(3,3,3);
-
-             model = Matrix4.Identity*Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time))*trans*scal;
-             shaderP.SetMatrix4("model", model);
-             shaderP.SetMatrix4("view", _camera.GetViewMatrix());
-             shaderP.SetMatrix4("projection", _camera.GetProjectionMatrix());
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
 
-             //set uniform
-             shaderP?.Use();
-             
-             GL.BindVertexArray(VertextArrayObject);
-             
-             GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
-  
+            cube.Draw();
 
-             }
+            SwapBuffers();
 
-    
-
-             
-         
-             SwapBuffers();
-            }
         }
         protected override void OnResize(ResizeEventArgs e)
         {
 
             base.OnResize(e);
 
-          
+
             GL.Viewport(0, 0, Size.X, Size.Y);
 
             _camera.AspectRatio = Size.X / (float)Size.Y;
@@ -675,13 +560,11 @@ namespace EON.Native
 
         protected override void OnUnload()
         {
-            if (shaderP != null)
-            {
-                shaderP.Disposed();
 
-            }
+            cube.Dispose();
+
         }
-          protected override void OnUpdateFrame(FrameEventArgs e)
+        protected override void OnUpdateFrame(FrameEventArgs e)
         {
             base.OnUpdateFrame(e);
 
@@ -691,6 +574,10 @@ namespace EON.Native
             }
 
             var input = KeyboardState;
+
+
+            cube?.OnUpdate(input);
+
 
             if (input.IsKeyDown(Keys.Escape))
             {
@@ -705,19 +592,7 @@ namespace EON.Native
                 _camera.Position += _camera.Front * cameraSpeed * (float)e.Time; // Forward
             }
 
-            if(input.IsKeyDown(Keys.Right)){
-                moveright = (float)(0.1 + moveright);
-            }
-             if(input.IsKeyDown(Keys.Left)){
-                moveright=(float)(moveright-0.1);
-            }
 
-            if(input.IsKeyDown(Keys.Down)){
-                 moveDown = (float)(moveDown-0.01);
-            }
-            if(input.IsKeyDown(Keys.Up)){
-                 moveDown = (float)(moveDown+0.01);
-            }
 
             if (input.IsKeyDown(Keys.S))
             {
@@ -766,14 +641,10 @@ namespace EON.Native
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
             base.OnMouseWheel(e);
-            
+
             _camera.Fov -= e.OffsetY;
         }
-
-      
-
-     
     }
 
-    
+
 }
